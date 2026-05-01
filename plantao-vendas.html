@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Plantão de Vendas — CommandInvest</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efeb;
+    --border: #e0ddd5;
+    --border2: #c8c5bc;
+    --text: #1a1917;
+    --text2: #6b6860;
+    --text3: #9e9b93;
+    --green: #0f6e56;
+    --green-light: #e1f5ee;
+    --green-mid: #1d9e75;
+    --blue: #185fa5;
+    --blue-light: #e6f1fb;
+    --amber: #854f0b;
+    --amber-light: #faeeda;
+    --red: #a32d2d;
+    --red-light: #fcebeb;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 3rem;
+  }
+
+  .top-bar {
+    background: var(--text);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .top-bar h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.02em; }
+  .top-bar span { font-size: 12px; opacity: 0.6; }
+  .live-dot { display: inline-block; width: 7px; height: 7px; background: #1d9e75; border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .container { max-width: 640px; margin: 0 auto; padding: 1.25rem 1rem; }
+
+  .tabs {
+    display: flex;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 1.25rem;
+    gap: 4px;
+  }
+  .tab {
+    flex: 1;
+    padding: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text2);
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .tab.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    margin-bottom: 1rem;
+  }
+
+  .field { margin-bottom: 1rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: var(--green-mid);
+    background: white;
+  }
+  .field textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .pill-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    cursor: pointer;
+    background: var(--bg);
+    color: var(--text2);
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .pill.selected-green { background: var(--green-light); color: var(--green); border-color: #5dcaa5; font-weight: 600; }
+  .pill.selected-blue { background: var(--blue-light); color: var(--blue); border-color: #85b7eb; font-weight: 600; }
+
+  .fb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .fb-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: var(--bg);
+    color: var(--text2);
+    transition: all 0.15s;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: inherit;
+  }
+  .fb-btn:hover { border-color: var(--border2); background: var(--surface2); }
+  .fb-btn.selected { background: var(--blue-light); color: var(--blue); border-color: #85b7eb; font-weight: 600; }
+  .fb-btn.selected.fb-hot { background: var(--green-light); color: var(--green); border-color: #5dcaa5; }
+  .fb-btn.selected.fb-neg { background: var(--red-light); color: var(--red); border-color: #f09595; }
+  .fb-btn.selected.fb-neutral { background: var(--amber-light); color: var(--amber); border-color: #fac775; }
+
+  .calls-row { display: flex; align-items: center; gap: 12px; }
+  .cnt-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--border2);
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--text2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: inherit;
+    transition: background 0.1s;
+  }
+  .cnt-btn:hover { background: var(--surface2); }
+  .cnt-val { font-size: 22px; font-weight: 700; color: var(--text); min-width: 28px; text-align: center; }
+  .cnt-label { font-size: 13px; color: var(--text2); }
+
+  .upload-area {
+    border: 1.5px dashed var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s;
+    background: var(--bg);
+  }
+  .upload-area:hover { border-color: var(--green-mid); background: var(--green-light); }
+  .upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 22px; margin-bottom: 6px; }
+  .upload-text { font-size: 13px; color: var(--text2); }
+  .upload-ok { font-size: 13px; color: var(--green); font-weight: 600; margin-top: 6px; }
+
+  .submit-btn {
+    width: 100%;
+    padding: 15px;
+    background: var(--text);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.02em;
+    transition: all 0.15s;
+    margin-top: 0.5rem;
+  }
+  .submit-btn:hover { background: #333; }
+  .submit-btn:active { transform: scale(0.99); }
+  .submit-btn:disabled { background: var(--text3); cursor: not-allowed; }
+
+  .toast {
+    display: none;
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 999;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+  .toast.show { display: block; }
+  .toast.error { background: var(--red); }
+
+  /* DASHBOARD */
+  .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+  .metric {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    text-align: center;
+  }
+  .metric-val { font-size: 28px; font-weight: 700; color: var(--text); }
+  .metric-lbl { font-size: 11px; color: var(--text3); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+
+  .log-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+    margin-bottom: 8px;
+  }
+  .log-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .log-lead { font-size: 15px; font-weight: 700; color: var(--text); }
+  .log-meta { font-size: 12px; color: var(--text3); text-align: right; }
+  .log-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .tag-msg { background: var(--blue-light); color: var(--blue); }
+  .tag-call { background: var(--amber-light); color: var(--amber); }
+  .tag-hot { background: var(--green-light); color: var(--green); }
+  .tag-med { background: var(--blue-light); color: var(--blue); }
+  .tag-neg { background: var(--red-light); color: var(--red); }
+  .tag-neu { background: #f1efe8; color: #5f5e5a; }
+  .log-obs { font-size: 13px; color: var(--text2); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); line-height: 1.5; }
+  .log-print { font-size: 11px; color: var(--blue); margin-top: 4px; font-weight: 600; }
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 14px; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .export-btn {
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    margin-bottom: 1rem;
+    transition: all 0.15s;
+  }
+  .export-btn:hover { background: var(--surface2); color: var(--text); }
+
+  @media (max-width: 480px) {
+    .row2 { grid-template-columns: 1fr; }
+    .metrics { grid-template-columns: repeat(3, 1fr); }
+    .fb-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>🏢 CommandInvest — Plantão 1º de Maio</h1>
+  <span><span class="live-dot"></span><span id="badge-count">0 registros</span></span>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('form', this)">Registrar</button>
+    <button class="tab" onclick="switchTab('dash', this)">Dashboard</button>
+  </div>
+
+  <!-- FORM -->
+  <div id="section-form" class="section active">
+
+    <div class="card">
+      <div class="card-title">Identificação</div>
+      <div class="row2">
+        <div class="field">
+          <label>Vendedor</label>
+          <input type="text" id="vendedor" placeholder="Seu nome" />
+        </div>
+        <div class="field">
+          <label>Nome do lead</label>
+          <input type="text" id="lead-nome" placeholder="Nome completo" />
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Telefone</label>
+          <input type="tel" id="lead-tel" placeholder="(51) 9 0000-0000" />
+        </div>
+        <div class="field">
+          <label>Horário</label>
+          <input type="time" id="horario" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Mensagem enviada</div>
+      <div class="pill-group" id="msg-group">
+        <button class="pill" onclick="selectPill('msg', 1, this)">Mensagem 1</button>
+        <button class="pill" onclick="selectPill('msg', 2, this)">Mensagem 2</button>
+        <button class="pill" onclick="selectPill('msg', 3, this)">Mensagem 3</button>
+        <button class="pill" onclick="selectPill('msg', 0, this)">Nenhuma</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Ligações realizadas</div>
+      <div class="calls-row">
+        <button class="cnt-btn" onclick="changeCalls(-1)">−</button>
+        <span class="cnt-val" id="calls-val">0</span>
+        <button class="cnt-btn" onclick="changeCalls(1)">+</button>
+        <span class="cnt-label" id="calls-label">ligações</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Feedback do lead</div>
+      <div class="fb-grid">
+        <button class="fb-btn fb-hot" onclick="selectFb('interesse-alto', this)">🔥 Interesse alto / quer avançar</button>
+        <button class="fb-btn" onclick="selectFb('interesse-medio', this)">🤔 Interesse médio / quer info</button>
+        <button class="fb-btn fb-neg" onclick="selectFb('sem-resposta', this)">📵 Sem resposta</button>
+        <button class="fb-btn fb-neg" onclick="selectFb('nao-tem-interesse', this)">❌ Não tem interesse</button>
+        <button class="fb-btn fb-neutral" onclick="selectFb('pediu-contato', this)">📅 Pediu contato em outra data</button>
+        <button class="fb-btn" onclick="selectFb('proposta-enviada', this)">📄 Proposta enviada / aguardando</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Observações</div>
+      <div class="field">
+        <textarea id="obs" placeholder="Contexto adicional, objeções, interesses específicos do lead..."></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Evidência (print da conversa)</div>
+      <div class="upload-area" id="upload-area">
+        <input type="file" id="print-file" accept="image/*" onchange="handleUpload(this)" />
+        <div class="upload-icon">📎</div>
+        <div class="upload-text">Toque para anexar o print da conversa</div>
+        <div class="upload-ok" id="upload-ok"></div>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitForm()">Registrar interação</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="section-dash" class="section">
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-val" id="m-total">0</div>
+        <div class="metric-lbl">Interações</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" id="m-calls">0</div>
+        <div class="metric-lbl">Ligações</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" id="m-quente">0</div>
+        <div class="metric-lbl">Quentes</div>
+      </div>
+    </div>
+
+    <button class="export-btn" onclick="exportCSV()">⬇ Exportar CSV</button>
+
+    <div id="log-list"><div class="empty">Nenhuma interação registrada ainda.</div></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  // ─── CONFIGURAÇÃO ───────────────────────────────────────────────
+  // Cole aqui a URL do seu Google Apps Script após publicar
+  const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwfshliv9btrWZG0dza56mUU3qwWDrdgdXsOTMiI6pVkf7g3RpxjAxioDFyCqM21gztnQ/exec';
+  // ────────────────────────────────────────────────────────────────
+
+  let selectedMsg = null;
+  let selectedFb = null;
+  let callsCount = 0;
+  let entries = JSON.parse(localStorage.getItem('plantao_entries') || '[]');
+
+  function updateBadge() {
+    document.getElementById('badge-count').textContent = entries.length + (entries.length === 1 ? ' registro' : ' registros');
+  }
+  updateBadge();
+
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('section-' + tab).classList.add('active');
+    if (tab === 'dash') renderDash();
+  }
+
+  function selectPill(group, val, el) {
+    if (group === 'msg') {
+      selectedMsg = val;
+      document.querySelectorAll('#msg-group .pill').forEach(b => b.classList.remove('selected-green','selected-blue'));
+      el.classList.add('selected-green');
+    }
+  }
+
+  function selectFb(val, el) {
+    selectedFb = val;
+    document.querySelectorAll('.fb-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  function changeCalls(delta) {
+    callsCount = Math.max(0, callsCount + delta);
+    document.getElementById('calls-val').textContent = callsCount;
+    document.getElementById('calls-label').textContent = callsCount === 1 ? 'ligação' : 'ligações';
+  }
+
+  function handleUpload(input) {
+    const name = input.files[0] ? input.files[0].name : '';
+    document.getElementById('upload-ok').textContent = name ? '✓ ' + name : '';
+  }
+
+  function showToast(msg, isError) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (isError ? ' error' : '');
+    setTimeout(() => t.className = 'toast', 3000);
+  }
+
+  async function submitForm() {
+    const vendedor = document.getElementById('vendedor').value.trim();
+    const leadNome = document.getElementById('lead-nome').value.trim();
+    const horario = document.getElementById('horario').value;
+
+    if (!vendedor || !leadNome) { showToast('Preencha o nome do vendedor e do lead.', true); return; }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Registrando...';
+
+    const entry = {
+      vendedor, leadNome,
+      tel: document.getElementById('lead-tel').value.trim(),
+      horario: horario || new Date().toTimeString().slice(0,5),
+      msg: selectedMsg,
+      calls: callsCount,
+      fb: selectedFb,
+      obs: document.getElementById('obs').value.trim(),
+      print: document.getElementById('print-file').files[0] ? document.getElementById('print-file').files[0].name : '',
+      ts: new Date().toLocaleString('pt-BR')
+    };
+
+    // Salva local
+    entries.push(entry);
+    localStorage.setItem('plantao_entries', JSON.stringify(entries));
+    updateBadge();
+
+    // Envia pro Sheets se URL configurada
+    if (SHEET_URL && SHEET_URL !== 'COLE_AQUI_A_URL_DO_APPS_SCRIPT') {
+      try {
+        await fetch(SHEET_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(entry)
+        });
+      } catch(e) { console.warn('Sheets offline, salvo localmente.'); }
+    }
+
+    // Reset form
+    document.getElementById('vendedor').value = '';
+    document.getElementById('lead-nome').value = '';
+    document.getElementById('lead-tel').value = '';
+    document.getElementById('horario').value = new Date().toTimeString().slice(0,5);
+    document.getElementById('obs').value = '';
+    document.getElementById('upload-ok').textContent = '';
+    document.getElementById('print-file').value = '';
+    document.getElementById('calls-val').textContent = '0';
+    document.getElementById('calls-label').textContent = 'ligações';
+    callsCount = 0; selectedMsg = null; selectedFb = null;
+    document.querySelectorAll('.pill').forEach(b => b.classList.remove('selected-green','selected-blue'));
+    document.querySelectorAll('.fb-btn').forEach(b => b.classList.remove('selected'));
+
+    btn.disabled = false;
+    btn.textContent = 'Registrar interação';
+    showToast('✓ Interação registrada!', false);
+  }
+
+  const fbMap = {
+    'interesse-alto': { label: 'Interesse alto', cls: 'tag-hot' },
+    'interesse-medio': { label: 'Interesse médio', cls: 'tag-med' },
+    'sem-resposta': { label: 'Sem resposta', cls: 'tag-neg' },
+    'nao-tem-interesse': { label: 'Sem interesse', cls: 'tag-neg' },
+    'pediu-contato': { label: 'Contato futuro', cls: 'tag-neu' },
+    'proposta-enviada': { label: 'Proposta enviada', cls: 'tag-med' }
+  };
+
+  function renderDash() {
+    const totalCalls = entries.reduce((s,e) => s + (e.calls||0), 0);
+    const quentes = entries.filter(e => e.fb === 'interesse-alto' || e.fb === 'proposta-enviada').length;
+    document.getElementById('m-total').textContent = entries.length;
+    document.getElementById('m-calls').textContent = totalCalls;
+    document.getElementById('m-quente').textContent = quentes;
+
+    const list = document.getElementById('log-list');
+    if (!entries.length) { list.innerHTML = '<div class="empty">Nenhuma interação registrada ainda.</div>'; return; }
+
+    list.innerHTML = [...entries].reverse().map(e => {
+      const fb = fbMap[e.fb] || null;
+      return `<div class="log-item">
+        <div class="log-header">
+          <div>
+            <div class="log-lead">${e.leadNome}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px;">${e.tel || ''}</div>
+          </div>
+          <div class="log-meta">${e.horario}<br>${e.vendedor}</div>
+        </div>
+        <div class="log-tags">
+          ${e.msg !== null && e.msg !== 0 ? `<span class="tag tag-msg">MSG ${e.msg}</span>` : ''}
+          ${e.calls > 0 ? `<span class="tag tag-call">${e.calls} lig.</span>` : ''}
+          ${fb ? `<span class="tag ${fb.cls}">${fb.label}</span>` : ''}
+        </div>
+        ${e.print ? `<div class="log-print">📎 ${e.print}</div>` : ''}
+        ${e.obs ? `<div class="log-obs">${e.obs}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  function exportCSV() {
+    if (!entries.length) { showToast('Nenhum dado para exportar.', true); return; }
+    const header = ['Timestamp','Vendedor','Lead','Telefone','Horário','Mensagem','Ligações','Feedback','Observações','Print'];
+    const rows = entries.map(e => [
+      e.ts, e.vendedor, e.leadNome, e.tel, e.horario,
+      e.msg === 0 ? 'Nenhuma' : e.msg ? 'Mensagem ' + e.msg : '',
+      e.calls, e.fb ? fbMap[e.fb]?.label : '', e.obs, e.print
+    ].map(v => '"' + String(v||'').replace(/"/g,'""') + '"').join(','));
+    const csv = [header.join(','), ...rows].join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+    a.download = 'plantao_commandinvest_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.csv';
+    a.click();
+  }
+
+  // Horário padrão = agora
+  document.getElementById('horario').value = new Date().toTimeString().slice(0,5);
+</script>
+</body>
+</html>
